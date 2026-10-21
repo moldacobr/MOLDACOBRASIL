@@ -8,8 +8,11 @@ Site da **Moldaço Moldes e Ferramentaria** com frontend HTML e backend FastAPI.
 - `assets/molde-3d-referencia.jpg` — foto de referência do molde usada no destaque visual.
 - `app.py` — API FastAPI para orçamento e envio SMTP.
 - `requirements.txt` — dependências Python.
-- `.env.example` — variáveis de ambiente para SMTP.
+- `.env.example` — nomes das variáveis SMTP, sem credenciais reais.
+- `Dockerfile` — imagem de produção para executar o FastAPI.
+- `render.yaml` — configuração de deploy no Render com health check e segredos fora do Git.
 - `.github/workflows/ci.yml` — testes automáticos do projeto.
+- `.github/workflows/docker.yml` — build e smoke test da imagem Docker.
 
 ## Executar localmente
 
@@ -25,6 +28,21 @@ uvicorn app:app --reload
 
 Acesse `http://127.0.0.1:8000`.
 
+## Executar com Docker
+
+```bash
+docker build -t moldacobrasil .
+docker run --rm -p 10000:10000 moldacobrasil
+```
+
+Acesse `http://127.0.0.1:10000`.
+
+## Deploy
+
+O projeto está preparado para um **Web Service Docker no Render**. O `render.yaml` configura o serviço para usar o Dockerfile, o endpoint `/health` como health check e `checksPass` para que novos commits só sejam implantados após os checks do CI passarem.
+
+As credenciais SMTP **não ficam no Git**. Na criação do serviço, o Render solicita os valores marcados com `sync: false`; depois eles devem ser mantidos como variáveis secretas do serviço.
+
 ## Endpoints
 
 - `GET /` — site.
@@ -37,4 +55,4 @@ O destaque do molde usa a foto fornecida como referência visual. Ela é apresen
 
 ## Regra de publicação
 
-Alterações entram por Pull Request. O CI deve passar antes do merge.
+Alterações entram por Pull Request. O CI deve passar antes do merge, e o deploy está configurado para aguardar checks verdes.
