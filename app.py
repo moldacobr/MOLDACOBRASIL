@@ -4,7 +4,7 @@ import smtplib
 from email.message import EmailMessage
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -42,9 +42,26 @@ class Orcamento(BaseModel):
         return valor
 
 
+def preparar_pagina() -> str:
+    html = INDEX_FILE.read_text(encoding="utf-8")
+    html = html.replace(
+        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> projeta, fabrica e reforma ferramentas para peças plásticas de até 250 g, além de matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico.",
+        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> atua na injeção de peças plásticas para terceiros, utilizando máquina própria, com capacidade de produção de peças de até 250 g. Também realiza manutenção, ajustes e reformas de moldes de injeção, sem restrição quanto ao peso da peça, além da fabricação e manutenção de ferramentas e matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico."
+    )
+    html = html.replace(
+        "<strong>Até 250 g</strong>",
+        "<strong>Até 250 g</strong>"
+    )
+    html = html.replace(
+        "peça plástica",
+        "peças plásticas para terceiros"
+    )
+    return html
+
+
 @app.get("/", include_in_schema=False)
 async def pagina_inicial():
-    return FileResponse(INDEX_FILE)
+    return HTMLResponse(preparar_pagina())
 
 
 @app.get("/health", include_in_schema=False)
