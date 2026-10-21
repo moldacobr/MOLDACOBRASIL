@@ -1,0 +1,30 @@
+name: Docker
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --tag moldacobrasil:test .
+
+      - name: Smoke test container
+        run: |
+          docker run --detach --name moldacobrasil-test -p 10000:10000 moldacobrasil:test
+          trap 'docker rm -f moldacobrasil-test' EXIT
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:10000/health | grep -q '"ok":true'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs moldacobrasil-test
+          exit 1
