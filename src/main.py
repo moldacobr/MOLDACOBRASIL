@@ -31,10 +31,8 @@ class Orcamento(BaseModel):
     @field_validator("nome", "empresa", "telefone", "servico", "descricao", "website")
     @classmethod
     def limpar_texto(cls, valor: str) -> str:
-        valor = valor.strip()
-        if "\r" in valor or "\n" in valor:
-            raise ValueError("Campo inválido.")
-        return valor
+        # Descrições comerciais podem conter quebras de linha; e-mail é validado separadamente.
+        return valor.strip()
 
 
 @app.get("/health", include_in_schema=False)
