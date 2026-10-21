@@ -102,7 +102,7 @@ const valid = await dispatch("/api/orcamento", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     nome: "Teste válido", email: "cliente@example.com", telefone: "11999999999",
-    servico: "Molde", descricao: "Solicitação válida\\ncom duas linhas para testar o envio",
+    servico: "Molde", descricao: "Solicitação válida\ncom duas linhas para testar o envio",
     consentimento: true, website: ""
   })
 });
