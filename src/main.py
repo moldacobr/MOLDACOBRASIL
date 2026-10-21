@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from workers import asgi
 
@@ -90,12 +91,7 @@ async def frontend(path: str, request: Request):
     asset_url = f"https://assets.local/{normalized}"
     response = await env.ASSETS.fetch(asset_url)
     body = await response.bytes()
-    headers = dict(response.headers)
-    return __import__("fastapi.responses", fromlist=["Response"]).Response(
-        content=body,
-        status_code=response.status,
-        headers=headers,
-    )
+    return Response(content=body, status_code=response.status, headers=dict(response.headers))
 
 
 Default = asgi.entrypoint(app)
