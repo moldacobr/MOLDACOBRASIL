@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Python syntax
+        run: python -m py_compile app.py
+
+      - name: HTML and JavaScript smoke checks
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          assert "/assets/molde-3d-referencia.jpg" in html
+          assert Path("assets/molde-3d-referencia.jpg").is_file()
+          assert "mold-canvas" not in html
+          assert "THREE." not in html
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.scripts = []
+                  self.current = None
+              def handle_starttag(self, tag, attrs):
+                  if tag == "script": self.current = []
+              def handle_data(self, data):
+                  if self.current is not None: self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag == "script" and self.current is not None:
+                      self.scripts.append("".join(self.current))
+                      self.current = None
+          p = Parser(); p.feed(html)
+          Path("/tmp/site-script.js").write_text("\n".join(p.scripts), encoding="utf-8")
+          PY
+          node --check /tmp/site-script.js
+
+      - name: Start FastAPI
+        run: |
+          uvicorn app:app --host 127.0.0.1 --port 8000 > /tmp/moldaco-uvicorn.log 2>&1 &
+          echo $! > /tmp/moldaco.pid
+          for i in {1..20}; do curl -fsS http://127.0.0.1:8000/health && break || sleep 1; done
+
+      - name: Smoke test HTTP endpoints
+        run: |
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
+          curl -fsS -o /tmp/mold.jpg -w '%{http_code}' http://127.0.0.1:8000/assets/molde-3d-referencia.jpg | grep -q '^200$'
