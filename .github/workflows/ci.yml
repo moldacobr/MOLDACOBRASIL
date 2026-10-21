@@ -73,3 +73,23 @@ jobs:
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Modelo técnico 3D'
           curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q 200
 
+  deploy:
+    name: Deploy Cloudflare Worker
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          echo "Cloudflare deploy credentials are configured."
+          echo "Worker deployment is intentionally gated here until the production Worker source is committed to the repository."
