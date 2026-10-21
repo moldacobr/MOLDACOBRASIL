@@ -33,6 +33,10 @@ jobs:
           html = Path("index.html").read_text(encoding="utf-8")
           assert "/assets/molde-3d-referencia.jpg" in html
           assert Path("assets/molde-3d-referencia.jpg").is_file()
+          assert 'class="scene3d"' in html
+          assert 'class="model3d"' in html
+          assert 'id="rotate-auto"' in html
+          assert 'pointermove' in html
           assert "mold-canvas" not in html
           assert "THREE." not in html
           class Parser(HTMLParser):
@@ -62,4 +66,5 @@ jobs:
       - name: Smoke test HTTP endpoints
         run: |
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'Foto real • visão 3D'
           curl -fsS -o /tmp/mold.jpg -w '%{http_code}' http://127.0.0.1:8000/assets/molde-3d-referencia.jpg | grep -q '^200$'
