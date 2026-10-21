@@ -64,7 +64,9 @@ assert.match(home.headers.get("content-type"), /text\/html/i);
 assert.match(homeHtml, /id="mold3d-canvas"/, "home page contains the 3D canvas");
 assert.match(homeHtml, /getContext\('webgl'/, "3D renderer is embedded in the page");
 assert.match(homeHtml, /\/api\/orcamento/, "home page uses the production API endpoint");
-assert.match(homeHtml, /liveCheckout/, "worker injects the production form handler");
+assert.match(homeHtml, /atua na <strong>injeção de peças plásticas para terceiros<\/strong>/, "canonical service description is present");
+assert.match(home.headers.get("content-security-policy"), /frame-ancestors/, "security policy is present");
+assert.doesNotMatch(homeHtml, /liveCheckout/, "worker does not inject a duplicate form handler");
 assert.doesNotMatch(homeHtml, /guardado localmente|O envio automático não está disponível/i, "production page does not advertise local-only submission");
 
 const asset = await dispatch("/assets/mold-3d.js");
@@ -100,7 +102,7 @@ const valid = await dispatch("/api/orcamento", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     nome: "Teste válido", email: "cliente@example.com", telefone: "11999999999",
-    servico: "Molde", descricao: "Solicitação válida para testar o envio",
+    servico: "Molde", descricao: "Solicitação válida\\ncom duas linhas para testar o envio",
     consentimento: true, website: ""
   })
 });
@@ -108,8 +110,21 @@ assert.equal(valid.status, 200, "valid quote request returns 200");
 assert.equal(sentEmails.length, 1, "valid request sends exactly one email");
 assert.equal(sentEmails[0].to, "admin@moldaco.com");
 assert.equal(sentEmails[0].replyTo, "cliente@example.com");
+assert.match(sentEmails[0].text, /com duas linhas/, "multiline descriptions are preserved");
 
 const hidden = await dispatch("/.env");
 assert.equal(hidden.status, 404, "hidden files are not served");
+assert.equal((await dispatch("/README.md")).status, 404, "repository documentation is not served publicly");
+assert.equal((await dispatch("/worker.js")).status, 404, "Worker source is not served publicly");
+assert.equal((await dispatch("/api/orcamento")).status, 405, "quote endpoint rejects non-POST requests");
+const invalidEmail = await dispatch("/api/orcamento", {
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ nome: "Teste", email: "nao-e-email", telefone: "11999999999", servico: "Molde", descricao: "Descrição suficientemente longa", consentimento: true, website: "" })
+});
+assert.equal(invalidEmail.status, 400, "invalid email is rejected");
+const invalidJson = await dispatch("/api/orcamento", {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: "{"
+});
+assert.equal(invalidJson.status, 400, "malformed JSON is rejected");
 
 console.log("Worker smoke tests passed: health, home, 3D markup, assets, form validation, honeypot, email, hidden files.");
