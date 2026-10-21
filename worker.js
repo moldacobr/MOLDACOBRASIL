@@ -42,6 +42,7 @@ function withSecurityHeaders(headers = new Headers()) {
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("X-Frame-Options", "DENY");
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com; font-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
   headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
   return headers;
 }
