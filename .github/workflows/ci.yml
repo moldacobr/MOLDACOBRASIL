@@ -25,37 +25,43 @@ jobs:
       - name: Python syntax
         run: python -m py_compile app.py
 
-      - name: HTML and JavaScript smoke checks
+      - name: JavaScript and 3D smoke checks
+        run: |
+          test -s assets/mold-3d.js
+          test -s assets/mold-3d-compat.js
+          node --check assets/mold-3d.js
+          node --check assets/mold-3d-compat.js
+          grep -q "webgl" assets/mold-3d.js
+          grep -q "rotate-auto" assets/mold-3d.js
+          grep -q "rotate-reset" assets/mold-3d.js
+          grep -q "pointerdown" assets/mold-3d.js
+          grep -q "wheel" assets/mold-3d.js
+          grep -q "mold-3d.js" app.py
+          grep -q "mold-3d-compat.js" app.py
+
+      - name: HTML smoke checks
         run: |
           python - <<'PY'
           from html.parser import HTMLParser
           from pathlib import Path
           html = Path("index.html").read_text(encoding="utf-8")
-          assert "/assets/molde-3d-referencia.jpg" in html
-          assert Path("assets/molde-3d-referencia.jpg").is_file()
           assert 'class="scene3d"' in html
-          assert 'class="model3d"' in html
           assert 'id="rotate-auto"' in html
-          assert 'pointermove' in html
-          assert "mold-canvas" not in html
+          assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
+          assert 'id="rotate-reset"' in html
           assert "THREE." not in html
           class Parser(HTMLParser):
               def __init__(self):
                   super().__init__()
                   self.scripts = []
-                  self.current = None
               def handle_starttag(self, tag, attrs):
-                  if tag == "script": self.current = []
-              def handle_data(self, data):
-                  if self.current is not None: self.current.append(data)
-              def handle_endtag(self, tag):
-                  if tag == "script" and self.current is not None:
-                      self.scripts.append("".join(self.current))
-                      self.current = None
+                  if tag == "script":
+                      src = dict(attrs).get("src")
+                      if src:
+                          self.scripts.append(src)
           p = Parser(); p.feed(html)
-          Path("/tmp/site-script.js").write_text("\n".join(p.scripts), encoding="utf-8")
+          assert all("http://" not in src and "https://" not in src for src in p.scripts)
           PY
-          node --check /tmp/site-script.js
 
       - name: Start FastAPI
         run: |
@@ -66,5 +72,5 @@ jobs:
       - name: Smoke test HTTP endpoints
         run: |
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
-          curl -fsS http://127.0.0.1:8000/ | grep -q 'Foto real • visão 3D'
-          curl -fsS -o /tmp/mold.jpg -w '%{http_code}' http://127.0.0.1:8000/assets/molde-3d-referencia.jpg | grep -q '^200$'
+          curl -fsS http://127.0.0.1:8000/ | grep -q '/assets/mold-3d.js'
+          curl -fsS http://127.0.0.1:8000/assets/mold-3d.js | grep -q 'webgl'
