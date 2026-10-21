@@ -5,6 +5,18 @@ from workers import asgi
 
 app = FastAPI(title="API de orçamento Moldaço")
 
+CSP = "; ".join([
+    "default-src 'self'",
+    "img-src 'self' data: https:",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self'",
+    "frame-src 'self' https://www.google.com https://maps.google.com",
+    "font-src 'self' data: https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+])
+
 
 class Orcamento(BaseModel):
     nome: str = Field(min_length=2, max_length=100)
@@ -91,7 +103,10 @@ async def frontend(path: str, request: Request):
     asset_url = f"https://assets.local/{normalized}"
     response = await env.ASSETS.fetch(asset_url)
     body = await response.bytes()
-    return Response(content=body, status_code=response.status, headers=dict(response.headers))
+    headers = dict(response.headers)
+    headers["Content-Security-Policy"] = CSP
+    headers["X-Content-Type-Options"] = "nosniff"
+    return Response(content=body, status_code=response.status, headers=headers)
 
 
 Default = asgi.entrypoint(app)
