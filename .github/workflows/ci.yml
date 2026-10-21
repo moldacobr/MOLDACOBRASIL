@@ -28,16 +28,13 @@ jobs:
       - name: JavaScript and 3D smoke checks
         run: |
           test -s assets/mold-3d.js
-          test -s assets/mold-3d-compat.js
           node --check assets/mold-3d.js
-          node --check assets/mold-3d-compat.js
           grep -q "webgl" assets/mold-3d.js
           grep -q "rotate-auto" assets/mold-3d.js
           grep -q "rotate-reset" assets/mold-3d.js
           grep -q "pointerdown" assets/mold-3d.js
           grep -q "wheel" assets/mold-3d.js
           grep -q "mold-3d.js" app.py
-          grep -q "mold-3d-compat.js" app.py
 
       - name: HTML smoke checks
         run: |
