@@ -18,7 +18,7 @@ Site da **Moldaço Moldes e Ferramentaria**, com frontend HTML e backend FastAPI
 
 O deploy é feito no **Cloudflare Workers**. O mesmo Worker atende a API FastAPI e os arquivos estáticos do site.
 
-A configuração usa Python Workers com `python_workers`, Static Assets e uma binding `EMAIL` para o Cloudflare Email Service. FastAPI é suportado diretamente no runtime Python Workers. citeturn0search0turn0search2
+A configuração usa Python Workers com `python_workers`, Static Assets e uma binding `EMAIL` para o Cloudflare Email Service.
 
 Para o formulário funcionar em produção, configure no Worker as variáveis secretas `MAIL_FROM` e `MAIL_TO`. O domínio remetente precisa estar configurado no Cloudflare Email Service.
 
@@ -38,7 +38,7 @@ O binding de e-mail pode ser simulado localmente ou configurado como remoto no W
 uv run pywrangler deploy
 ```
 
-O projeto pode ser publicado no subdomínio `workers.dev` ou posteriormente ligado a um domínio personalizado. citeturn0search4turn0search6
+O projeto pode ser publicado no subdomínio `workers.dev` ou posteriormente ligado a um domínio personalizado.
 
 ## Endpoints
 
@@ -48,7 +48,7 @@ O projeto pode ser publicado no subdomínio `workers.dev` ou posteriormente liga
 
 ## E-mail
 
-O formulário usa o Cloudflare Email Service por binding do Worker, sem SMTP externo no código de produção. A binding `EMAIL` é configurada pelo `wrangler.jsonc`; o endereço de envio e o destinatário ficam fora do código. citeturn1search2turn1search6
+O formulário usa o Cloudflare Email Service por binding do Worker, sem SMTP externo no código de produção. A binding `EMAIL` é configurada pelo `wrangler.jsonc`; o endereço de envio e o destinatário ficam fora do código.
 
 ## Observação sobre o visual do molde
 
