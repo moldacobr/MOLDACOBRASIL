@@ -12,6 +12,7 @@ Site da **Moldaço Moldes e Ferramentaria** com frontend HTML e backend FastAPI.
 - `Dockerfile` — imagem de produção para executar o FastAPI.
 - `render.yaml` — configuração de deploy no Render com health check e segredos fora do Git.
 - `.github/workflows/ci.yml` — testes automáticos do projeto.
+- `.github/workflows/docker.yml` — build e smoke test da imagem Docker.
 
 ## Executar localmente
 
@@ -41,8 +42,6 @@ Acesse `http://127.0.0.1:10000`.
 O projeto está preparado para um **Web Service Docker no Render**. O `render.yaml` configura o serviço para usar o Dockerfile, o endpoint `/health` como health check e `checksPass` para que novos commits só sejam implantados após os checks do CI passarem.
 
 As credenciais SMTP **não ficam no Git**. Na criação do serviço, o Render solicita os valores marcados com `sync: false`; depois eles devem ser mantidos como variáveis secretas do serviço.
-
-O Render fornece HTTPS gerenciado para o serviço e para domínios personalizados. citeturn0search4
 
 ## Endpoints
 
