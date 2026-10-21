@@ -33,13 +33,15 @@ jobs:
           from html.parser import HTMLParser
           from pathlib import Path
           html = Path("index.html").read_text(encoding="utf-8")
-          assert Path("assets/molde-3d-referencia.jpg").is_file()
+          assert Path("assets/mold-3d.js").is_file()
           assert 'class="scene3d"' in html
-          assert 'class="model3d mold-assembly"' in html
+          assert 'id="mold3d-canvas"' in html
           assert 'id="rotate-auto"' in html
-          assert 'pointermove' in html
-          assert "mold-canvas" not in html
-          assert "THREE." not in html
+          assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
+          assert 'id="rotate-reset"' in html
+          assert 'mold3dScript.src' in html
+          assert "google.com/maps" in html
+          assert "quote-form" in html
           class Parser(HTMLParser):
               def __init__(self):
                   super().__init__()
@@ -57,6 +59,7 @@ jobs:
           Path("/tmp/site-script.js").write_text("\n".join(p.scripts), encoding="utf-8")
           PY
           node --check /tmp/site-script.js
+          node --check assets/mold-3d.js
 
       - name: Start FastAPI legacy smoke server
         run: |
@@ -68,4 +71,5 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Modelo técnico 3D'
-          curl -fsS -o /tmp/mold.jpg -w '%{http_code}' http://127.0.0.1:8000/assets/molde-3d-referencia.jpg | grep -q '^200$'
+          curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q 200
+
