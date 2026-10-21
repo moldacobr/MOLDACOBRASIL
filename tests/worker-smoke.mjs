@@ -64,7 +64,8 @@ assert.match(home.headers.get("content-type"), /text\/html/i);
 assert.match(homeHtml, /id="mold3d-canvas"/, "home page contains the 3D canvas");
 assert.match(homeHtml, /getContext\('webgl'/, "3D renderer is embedded in the page");
 assert.match(homeHtml, /\/api\/orcamento/, "home page uses the production API endpoint");
-assert.match(homeHtml, /Envio online ativo/, "worker replaces obsolete demo message");
+assert.match(homeHtml, /liveCheckout/, "worker injects the production form handler");
+assert.doesNotMatch(homeHtml, /guardado localmente|O envio automático não está disponível/i, "production page does not advertise local-only submission");
 
 const asset = await dispatch("/assets/mold-3d.js");
 assert.equal(asset.status, 200, "asset route returns 200");
