@@ -43,6 +43,14 @@
     .bolt-1{left:85px;top:68px}.bolt-2{left:237px;top:68px}.bolt-3{left:85px;top:185px}.bolt-4{left:237px;top:185px}.bolt-5{left:107px;top:80px}.bolt-6{left:215px;top:80px}.bolt-7{left:107px;top:173px}.bolt-8{left:215px;top:173px}
     .mold-stamp{position:absolute;left:101px;top:156px;color:#34495b;font:900 8px/1.3 Arial,sans-serif;letter-spacing:1.2px;transform:translateZ(60px);text-align:center;text-shadow:0 1px rgba(255,255,255,.8)}
     .mold-stamp span{display:block;font-size:5px;letter-spacing:1.6px;margin-top:3px}
+    /* Canvas 3D independente: a geometria é desenhada em perspectiva, não é uma imagem rotacionada. */
+    .model-stage{height:440px;padding:0;background:#e2e9f0}
+    .model-stage .scene3d{width:100%;height:100%;position:relative;overflow:hidden;touch-action:pan-y;cursor:grab}
+    #mold3d-canvas{display:block;width:100%;height:100%;touch-action:pan-y;outline:none}
+    #mold3d-canvas:active{cursor:grabbing}
+    .viewer-controls button:focus-visible{outline:3px solid #43b7ff;outline-offset:2px}
+    .viewer-controls button.is-active{background:#0b3553;border-color:#168cff;color:#fff}
+    @media(max-width:600px){.model-stage{height:360px}.model-stage .scene3d{width:100%;height:100%}}
     .map{position:relative}.map-fallback{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px 0;color:#b8c5d5;font-size:13px}
     .map-fallback a{color:#7dd3fc}
     @media(max-width:600px){.model-stage{height:360px}.mold-assembly{scale:.86}.model-stage .scene3d{width:100%;height:100%}}
@@ -59,19 +67,7 @@
       <div><div class="eyebrow"><i class="dot"></i> Moldes de precisão</div><h1>Ferramentaria para <span>injeção plástica</span> e metais não ferrosos.</h1><p class="lead"><strong>MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> projeta, fabrica e reforma ferramentas para peças plásticas de até 250 g, além de matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico.</p><div class="actions"><a class="btn btn-primary" href="#orcamento">Solicitar orçamento técnico</a><a class="btn btn-ghost" href="#visualizador">Ver molde em 3D</a></div><div class="stats"><div class="stat"><strong>Até 250 g</strong><small>peça plástica</small></div><div class="stat"><strong>3 frentes</strong><small>plástico, alumínio e Zamak</small></div><div class="stat"><strong>São Paulo</strong><small>usinagem local</small></div></div></div>
       <div class="viewer" id="visualizador">
         <div class="viewer-head"><strong>Molde de injeção</strong><span class="tag">Modelo técnico 3D</span></div>
-        <div class="photo-wrap model-stage"><div class="scene3d" id="scene3d" aria-label="Modelo 3D interativo de um molde industrial de injeção">
-          <div class="model3d mold-assembly" id="model3d" role="img" aria-label="Molde industrial com placas de aço, colunas-guia, buchas, parafusos e conjunto central de injeção">
-            <div class="mold-block base-plate"><span class="plate-label">BASE</span></div><div class="mold-block rear-plate"></div>
-            <div class="tie-bar tie-a"></div><div class="tie-bar tie-b"></div><div class="tie-bar tie-c"></div><div class="tie-bar tie-d"></div>
-            <div class="mold-block moving-plate"></div><div class="mold-block spacer-left"></div><div class="mold-block spacer-right"></div>
-            <div class="mold-block cavity-plate"><span class="plate-label">CAVIDADE</span></div><div class="mold-block parting-line"></div><div class="mold-block core-plate"></div>
-            <div class="mold-block front-plate"><span class="plate-label">MOLDE • INJEÇÃO</span></div>
-            <div class="guide guide-a"></div><div class="guide guide-b"></div><div class="guide guide-c"></div><div class="guide guide-d"></div>
-            <div class="mold-block nozzle-seat"></div><div class="nozzle"></div><div class="nozzle-tip"></div><div class="cavity-ring"></div><div class="cavity-core"></div>
-            <div class="bolt bolt-1"></div><div class="bolt bolt-2"></div><div class="bolt bolt-3"></div><div class="bolt bolt-4"></div><div class="bolt bolt-5"></div><div class="bolt bolt-6"></div><div class="bolt bolt-7"></div><div class="bolt bolt-8"></div>
-            <div class="mold-stamp">MOLD AÇO <span>TOOLING SYSTEM</span></div>
-          </div>
-        </div></div>
+        <div class="photo-wrap model-stage"><div class="scene3d" id="scene3d"><canvas id="mold3d-canvas" role="img" aria-label="Modelo tridimensional interativo de molde de injeção com placas de aço, colunas-guia, buchas, pinos de extração e canal de injeção">Seu navegador não suporta canvas.</canvas></div></div>
         <div class="viewer-controls"><button type="button" id="rotate-left" aria-label="Girar molde para a esquerda">↶ Esquerda</button><button type="button" id="rotate-auto" aria-label="Ativar rotação automática">⟳ Auto</button><button type="button" id="rotate-right" aria-label="Girar molde para a direita">↷ Direita</button><button type="button" id="rotate-reset" aria-label="Voltar à posição inicial">Reset</button><span class="state" id="viewer-state">Arraste para examinar o molde</span></div>
         <div class="notice"><strong>Modelo conceitual tridimensional:</strong> conjunto mecânico ilustrativo inspirado em moldes industriais de injeção, com placas, colunas-guia e região de cavidade. Não representa projeto CAD de fabricação.</div>
       </div>
@@ -86,18 +82,8 @@
   <script>
     const $=id=>document.getElementById(id); $('year').textContent=new Date().getFullYear();
     const dialog=$('privacy'); $('privacy-open').addEventListener('click',()=>dialog.showModal()); $('privacy-close').addEventListener('click',()=>dialog.close());
-    const model=$('model3d'), scene=$('scene3d'), state=$('viewer-state');
-    let rx=-8, ry=-18, auto=false, dragging=false, sx=0, sy=0, startRx=rx, startRy=ry;
-    const render=()=>{model.style.transform=`translateZ(0) rotateX(${rx}deg) rotateY(${ry}deg)`;model.style.webkitTransform=model.style.transform;model.dataset.rotationX=String(rx);model.dataset.rotationY=String(ry)};
-    const setState=text=>{state.textContent=text}; render();
-    $('rotate-left').addEventListener('click',()=>{auto=false;ry-=18;render();setState('Rotação manual')});
-    $('rotate-right').addEventListener('click',()=>{auto=false;ry+=18;render();setState('Rotação manual')});
-    $('rotate-reset').addEventListener('click',()=>{auto=false;rx=-8;ry=-18;render();setState('Posição inicial')});
-    $('rotate-auto').addEventListener('click',()=>{auto=!auto;$('rotate-auto').setAttribute('aria-pressed',String(auto));setState(auto?'Rotação automática ativa':'Rotação automática pausada')});
-    scene.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;dragging=true;sx=e.clientX;sy=e.clientY;startRx=rx;startRy=ry;auto=false;try{scene.setPointerCapture(e.pointerId)}catch(_){}setState('Arrastando');e.preventDefault()});
-    scene.addEventListener('pointermove',e=>{if(!dragging)return;ry=startRy+(e.clientX-sx)*.65;rx=Math.max(-70,Math.min(70,startRx-(e.clientY-sy)*.5));render()});
-    const stop=()=>{if(dragging){dragging=false;setState('Arraste para examinar o molde')}}; scene.addEventListener('pointerup',stop); scene.addEventListener('pointercancel',stop); scene.addEventListener('lostpointercapture',stop); window.addEventListener('pointerup',stop); window.addEventListener('blur',stop); scene.addEventListener('wheel',e=>{e.preventDefault();const z=Math.max(.72,Math.min(1.35,Number(model.dataset.zoom||1)-Math.sign(e.deltaY)*.06));model.dataset.zoom=String(z);model.style.scale=String(z)},{passive:false});
-    const animate=()=>{if(auto&&!dragging){ry+=.35;render()}requestAnimationFrame(animate)}; requestAnimationFrame(animate);
+    // O renderizador 3D fica isolado em assets/mold-3d.js; os demais scripts do site permanecem intactos.
+    const mold3dScript=document.createElement('script'); mold3dScript.src='/assets/mold-3d.js'; mold3dScript.defer=true; document.head.appendChild(mold3dScript);
     const form=$('quote-form'), feedback=$('form-feedback'), button=$('submit');
     const showFeedback=(text,ok=false)=>{feedback.style.display='block';feedback.style.background=ok?'rgba(34,197,94,.12)':'rgba(245,158,11,.12)';feedback.style.border='1px solid '+(ok?'#22c55e':'#f59e0b');feedback.style.color=ok?'#bbf7d0':'#fde68a';feedback.textContent=text};
     form.addEventListener('submit',async e=>{e.preventDefault();const hp=$('website').value.trim();if(hp)return;if(!form.checkValidity()){form.reportValidity();showFeedback('Revise os campos obrigatórios antes de enviar.');return;}const payload={nome:$('nome').value.trim(),empresa:$('empresa').value.trim(),email:$('email').value.trim(),telefone:$('telefone').value.trim(),servico:$('servico').value,descricao:$('descricao').value.trim(),consentimento:$('consentimento').checked,website:hp};button.disabled=true;button.textContent='Processando...';try{const r=await fetch('/api/orcamento',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload)});if(!r.ok)throw new Error('status '+r.status);showFeedback('Solicitação enviada com sucesso. Em breve a equipe retornará.',true);form.reset();}catch(err){try{const old=JSON.parse(localStorage.getItem('moldaco_orcamentos')||'[]');old.push({...payload,salvo_em:new Date().toISOString()});localStorage.setItem('moldaco_orcamentos',JSON.stringify(old));}catch(_){}showFeedback('O formulário foi validado e guardado localmente. O envio automático não está disponível neste ambiente de demonstração.');}finally{button.disabled=false;button.textContent='Enviar solicitação de orçamento';}});
