@@ -101,6 +101,21 @@ jobs:
           status=$(curl -sS -o /tmp/moldaco-invalid.json -w '%{http_code}' -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Teste","email":"teste@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste sem consentimento","consentimento":false,"website":""}')
           test "$status" = "400"
 
+      - name: Smoke test live production Worker
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -eu
+          health_status=$(curl --connect-timeout 10 --max-time 25 -sS -o /tmp/prod-health.json -w '%{http_code}' https://moldaco.com.br/health)
+          test "$health_status" = "200"
+          grep -q '"ok":true' /tmp/prod-health.json
+          page_status=$(curl --connect-timeout 10 --max-time 25 -sS -o /tmp/prod-index.html -w '%{http_code}' https://moldaco.com.br/)
+          test "$page_status" = "200"
+          grep -q 'id="mold3d-canvas"' /tmp/prod-index.html
+          grep -q "getContext('webgl'" /tmp/prod-index.html
+          grep -q 'injeção de peças plásticas para terceiros' /tmp/prod-index.html
+          blocked_status=$(curl --connect-timeout 10 --max-time 25 -sS -o /dev/null -w '%{http_code}' https://moldaco.com.br/worker.js)
+          test "$blocked_status" = "404"
+
   deploy:
     name: Deploy Cloudflare Worker
     needs: test
