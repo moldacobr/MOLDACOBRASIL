@@ -71,5 +71,5 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Modelo técnico 3D'
-          curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q '^200
+          curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q 200
 
