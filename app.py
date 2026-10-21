@@ -46,15 +46,15 @@ def preparar_pagina() -> str:
     html = INDEX_FILE.read_text(encoding="utf-8")
     html = html.replace(
         "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> projeta, fabrica e reforma ferramentas para peças plásticas de até 250 g, além de matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico.",
-        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> atua na injeção de peças plásticas para terceiros, utilizando máquina própria, com capacidade de produção de peças de até 250 g. Também realiza manutenção, ajustes e reformas de moldes de injeção, sem restrição quanto ao peso da peça, além da fabricação e manutenção de ferramentas e matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico."
+        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> atua na <strong>injeção de peças plásticas para terceiros</strong>, utilizando máquina própria, com capacidade máxima de produção de peças de até <strong>250 g</strong>. Também realiza <strong>manutenção, ajustes e reformas de moldes de injeção sem restrição de peso</strong>, além da fabricação e manutenção de ferramentas e matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico."
     )
     html = html.replace(
-        "<strong>Até 250 g</strong>",
-        "<strong>Até 250 g</strong>"
+        "<div class=\"stat\"><strong>Até 250 g</strong><small>peça plástica</small></div>",
+        "<div class=\"stat\"><strong>Até 250 g</strong><small>peças plásticas para terceiros — injeção em máquina própria</small></div>"
     )
     html = html.replace(
-        "peça plástica",
-        "peças plásticas para terceiros"
+        "<div class=\"stat\"><strong>3 frentes</strong><small>plástico, alumínio e Zamak</small></div>",
+        "<div class=\"stat\"><strong>Manutenção de moldes</strong><small>qualquer molde, sem limite de peso</small></div><div class=\"stat\"><strong>3 frentes</strong><small>plástico, alumínio e Zamak</small></div>"
     )
     return html
 
