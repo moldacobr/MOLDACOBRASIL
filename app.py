@@ -36,28 +36,13 @@ class Orcamento(BaseModel):
     @field_validator("nome", "empresa", "telefone", "servico", "descricao", "website")
     @classmethod
     def limpar_texto(cls, valor: str) -> str:
-        valor = valor.strip()
-        if "\r" in valor or "\n" in valor:
-            raise ValueError("Campo inválido.")
-        return valor
+        # Descrições comerciais podem conter quebras de linha; e-mail é validado separadamente.
+        return valor.strip()
 
 
 def preparar_pagina() -> str:
-    html = INDEX_FILE.read_text(encoding="utf-8")
-    html = html.replace(
-        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> projeta, fabrica e reforma ferramentas para peças plásticas de até 250 g, além de matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico.",
-        "MOLDACO PEÇAS E FERRAMENTAS LTDA</strong> atua na <strong>injeção de peças plásticas para terceiros</strong>, utilizando máquina própria, com capacidade máxima de produção de peças de até <strong>250 g</strong>. Também realiza <strong>manutenção, ajustes e reformas de moldes de injeção sem restrição de peso</strong>, além da fabricação e manutenção de ferramentas e matrizes para alumínio e Zamak, com foco em usinagem e ajuste mecânico."
-    )
-    html = html.replace(
-        "<div class=\"stat\"><strong>Até 250 g</strong><small>peça plástica</small></div>",
-        "<div class=\"stat\"><strong>Até 250 g</strong><small>peças plásticas para terceiros — injeção em máquina própria</small></div>"
-    )
-    html = html.replace(
-        "<div class=\"stat\"><strong>3 frentes</strong><small>plástico, alumínio e Zamak</small></div>",
-        "<div class=\"stat\"><strong>Manutenção de moldes</strong><small>qualquer molde, sem limite de peso</small></div><div class=\"stat\"><strong>3 frentes</strong><small>plástico, alumínio e Zamak</small></div>"
-    )
-    return html
-
+    # O HTML é a fonte canônica compartilhada com o Worker de produção.
+    return INDEX_FILE.read_text(encoding="utf-8")
 
 @app.get("/", include_in_schema=False)
 async def pagina_inicial():

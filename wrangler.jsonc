@@ -1,13 +1,11 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "moldacobrasil",
-  "main": "src/main.py",
-  "compatibility_date": "2026-10-19",
-  "compatibility_flags": ["python_workers"],
-  "assets": {
-    "directory": ".",
-    "binding": "ASSETS",
-    "run_worker_first": true
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "moldaco-preview-2026",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-21",
+  "vars": {
+    "MAIL_FROM": "admin@moldaco.com",
+    "MAIL_TO": "admin@moldaco.com"
   },
   "send_email": [
     {
