@@ -62,14 +62,18 @@ async def enviar_orcamento(request: Request, dados: Orcamento):
         raise HTTPException(status_code=400, detail="É necessário aceitar o aviso de privacidade.")
 
     smtp_host = os.environ.get("SMTP_HOST")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER")
     smtp_password = os.environ.get("SMTP_PASSWORD")
-    destinatario = os.environ.get("MAIL_TO", "admin@moldaco.com")
-    remetente = os.environ.get("MAIL_FROM", smtp_user or "")
+    destinatario = os.environ.get("MAIL_TO")
+    remetente = os.environ.get("MAIL_FROM")
 
     if not all([smtp_host, smtp_user, smtp_password, remetente, destinatario]):
         raise HTTPException(status_code=503, detail="Serviço de envio não configurado.")
+
+    try:
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    except ValueError:
+        raise HTTPException(status_code=503, detail="Configuração SMTP inválida.")
 
     mensagem = EmailMessage()
     mensagem["Subject"] = "Novo pedido de orçamento pelo site"
