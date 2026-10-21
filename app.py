@@ -4,7 +4,7 @@ import smtplib
 from email.message import EmailMessage
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -44,7 +44,12 @@ class Orcamento(BaseModel):
 
 @app.get("/", include_in_schema=False)
 async def pagina_inicial():
-    return FileResponse(INDEX_FILE)
+    html = INDEX_FILE.read_text(encoding="utf-8")
+    marker = "</body>"
+    script = '<script src="/assets/mold-3d.js" defer></script>'
+    if script not in html:
+        html = html.replace(marker, f"{script}\n{marker}", 1)
+    return HTMLResponse(content=html)
 
 
 @app.get("/health", include_in_schema=False)
