@@ -39,7 +39,8 @@ jobs:
           assert 'id="rotate-auto"' in html
           assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
           assert 'id="rotate-reset"' in html
-          assert 'mold3dScript.src' in html
+          assert "getContext('webgl'" in html
+          assert 'mold3dScript.src' not in html
           assert "google.com/maps" in html
           assert "quote-form" in html
           class Parser(HTMLParser):
