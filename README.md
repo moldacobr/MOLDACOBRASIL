@@ -1,59 +1,53 @@
 # MOLDACOBRASIL
 
-Site da **Moldaço Moldes e Ferramentaria**, com frontend HTML e backend FastAPI executados no **Cloudflare Workers**.
+Site institucional da **Moldaço Moldes e Ferramentaria**.
 
-## Estrutura
+## Arquitetura atual
 
-- `index.html` — página completa do site.
-- `assets/molde-3d-referencia.jpg` — foto real usada na visualização do molde.
-- `src/main.py` — FastAPI adaptado para o runtime Python Workers.
-- `wrangler.jsonc` — configuração do Cloudflare Worker, Static Assets e Email Service.
-- `pyproject.toml` — dependências do Python Worker.
-- `app.py` — implementação local legada para desenvolvimento com Uvicorn.
-- `requirements.txt` — dependências do ambiente local legado.
-- `.env.example` — exemplo sem credenciais reais.
-- `.github/workflows/ci.yml` — testes automáticos do projeto.
+- **index.html** — página institucional; o renderizador WebGL do molde 3D está embutido no HTML para evitar falha por carregamento de um arquivo JavaScript separado.
+- **worker.js** — Worker JavaScript que atende a página, publica **/health**, valida **/api/orcamento** e envia pedidos pelo Cloudflare Email binding.
+- **wrangler.jsonc** — configuração do Worker de produção **moldaco-preview-2026**, incluindo o binding **EMAIL** e as variáveis de remetente/destinatário.
+- **assets/mold-3d.js** — fonte independente do visualizador 3D, usada nos testes de sintaxe e como referência de manutenção; a página publicada contém o renderizador embutido.
+- **assets/** — arquivos visuais e scripts auxiliares.
+- **app.py** — implementação FastAPI legada para desenvolvimento e smoke tests locais; não é o runtime do Worker de produção.
+- **src/main.py** e **pyproject.toml** — implementação Python Workers experimental/legada; não são o entrypoint configurado para o deploy atual.
+- **tests/worker-smoke.mjs** — testes do handler real do Worker com bindings e upstream simulados.
+- **.github/workflows/ci.yml** — validação de sintaxe, contrato HTML, configuração, rotas do Worker e API FastAPI legada.
 
-## Cloudflare
+## Rotas de produção
 
-O deploy é feito no **Cloudflare Workers**. O mesmo Worker atende a API FastAPI e os arquivos estáticos do site.
+- **GET /** — site institucional.
+- **GET /health** — health check JSON.
+- **POST /api/orcamento** — valida e encaminha solicitação de orçamento por e-mail.
 
-A configuração usa Python Workers com `python_workers`, Static Assets e uma binding `EMAIL` para o Cloudflare Email Service.
+O Worker usa a binding **EMAIL** e as variáveis **MAIL_FROM** e **MAIL_TO**. A configuração de e-mail deve permanecer no Cloudflare; não inclua credenciais no Git.
 
-Para o formulário funcionar em produção, configure no Worker as variáveis secretas `MAIL_FROM` e `MAIL_TO`. O domínio remetente precisa estar configurado no Cloudflare Email Service.
+## Desenvolvimento local (API legada)
 
-## Executar localmente
+Requer Python 3.12 e as dependências de **requirements.txt**.
 
-```bash
-uv run pywrangler dev
-```
+~~~bash
+python -m pip install -r requirements.txt
+uvicorn app:app --reload
+~~~
 
-Acesse `http://localhost:8787`.
+Acesse **http://127.0.0.1:8000**. O envio real de e-mail no backend FastAPI requer as variáveis SMTP listadas em **.env.example**; sem elas, a API responde com erro explícito em vez de fingir que enviou.
 
-O binding de e-mail pode ser simulado localmente ou configurado como remoto no Wrangler para testes controlados. Não coloque credenciais reais no Git.
+## Testes
 
-## Deploy
+~~~bash
+node --check worker.js
+node --check assets/mold-3d.js
+node tests/worker-smoke.mjs
+python -m py_compile app.py src/main.py
+~~~
 
-```bash
-uv run pywrangler deploy
-```
+O CI também verifica o HTML, os controles do visualizador 3D, a configuração Wrangler, os endpoints locais e a validação de consentimento/anti-spam.
 
-O projeto pode ser publicado no subdomínio `workers.dev` ou posteriormente ligado a um domínio personalizado.
+## Publicação
 
-## Endpoints
+O Worker configurado para produção é **moldaco-preview-2026**, com entrypoint **worker.js**. O deploy automatizado pelo GitHub Actions só ocorre quando **CLOUDFLARE_API_TOKEN** e **CLOUDFLARE_ACCOUNT_ID** estão configurados como Actions secrets. Uma execução de testes verde, por si só, **não** significa que houve publicação.
 
-- `GET /` — site.
-- `GET /health` — health check.
-- `POST /api/orcamento` — formulário de orçamento.
+## Visualização 3D
 
-## E-mail
-
-O formulário usa o Cloudflare Email Service por binding do Worker, sem SMTP externo no código de produção. A binding `EMAIL` é configurada pelo `wrangler.jsonc`; o endereço de envio e o destinatário ficam fora do código.
-
-## Observação sobre o visual do molde
-
-O destaque do molde usa a foto fornecida como referência visual. Ela é apresentada como referência de engenharia e não como desenho CAD certificado ou projeto executivo.
-
-## Regra de publicação
-
-Alterações entram por Pull Request. Primeiro testamos localmente, depois CI, depois deploy controlado no Cloudflare e finalmente verificamos o site online. Só consideramos a publicação concluída após todos os testes passarem.
+O molde é uma visualização ilustrativa interativa, não um modelo CAD certificado nem um projeto executivo.
