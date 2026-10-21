@@ -42,7 +42,7 @@ function withSecurityHeaders(headers = new Headers()) {
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("X-Frame-Options", "DENY");
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  headers.set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self' https://www.google.com https://maps.google.com; font-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
+  headers.set("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src 'self' https://www.google.com https://maps.google.com; font-src 'self' data: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
   headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
   return headers;
 }
@@ -148,7 +148,7 @@ async function handle(request) {
         mensagem: "Pedido enviado com sucesso. Nossa equipe entrará em contato."
       });
     } catch (error) {
-      console.error("Falha no envio do pedido de orçamento:", error?.name || "Erro");
+      console.error("Falha no envio do pedido de orçamento:", JSON.stringify({ name: error?.name || "Error", code: error?.code || error?.cause?.code || null, message: String(error?.message || "Erro no provedor").slice(0, 300) }));
       return jsonResponse({
         detail: "Não foi possível enviar o pedido agora. Tente novamente em instantes."
       }, 502);
