@@ -97,7 +97,7 @@ jobs:
           curl -fsS http://127.0.0.1:8000/ | grep -q 'mold3d-canvas'
           curl -fsS http://127.0.0.1:8000/ | grep -q "getContext('webgl'"
           curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q 200
-          curl -fsS -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Bot","email":"bot@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste do campo anti-spam","consentimento":true,"website":"bot"}' | grep -q '"ok":true'
+          curl -fsS -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Bot","email":"bot@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste do campo anti-spam\nsegunda linha","consentimento":true,"website":"bot"}' | grep -q '"ok":true'
           status=$(curl -sS -o /tmp/moldaco-invalid.json -w '%{http_code}' -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Teste","email":"teste@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste sem consentimento","consentimento":false,"website":""}')
           test "$status" = "400"
 
