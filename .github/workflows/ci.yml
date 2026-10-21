@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Test site, Worker, and legacy API
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,7 +20,7 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: python -m pip install -r requirements.txt
 
       - name: Python syntax
@@ -27,40 +28,62 @@ jobs:
           python -m py_compile app.py
           python -m py_compile src/main.py
 
-      - name: HTML and JavaScript smoke checks
+      - name: Validate repository configuration and HTML contract
         run: |
           python - <<'PY'
+          import json
           from html.parser import HTMLParser
           from pathlib import Path
+
           html = Path("index.html").read_text(encoding="utf-8")
-          assert Path("assets/mold-3d.js").is_file()
-          assert 'class="scene3d"' in html
+          config = json.loads(Path("wrangler.jsonc").read_text(encoding="utf-8"))
+          assert config["name"] == "moldaco-preview-2026"
+          assert config["main"] == "worker.js"
+          assert any(binding["name"] == "EMAIL" for binding in config["send_email"])
+          assert Path(config["main"]).is_file()
+          assert 'id="scene3d"' in html
           assert 'id="mold3d-canvas"' in html
+          assert "getContext('webgl'" in html
           assert 'id="rotate-auto"' in html
           assert 'id="rotate-left"' in html and 'id="rotate-right"' in html
           assert 'id="rotate-reset"' in html
-          assert "getContext('webgl'" in html
-          assert 'mold3dScript.src' not in html
-          assert "google.com/maps" in html
-          assert "quote-form" in html
+          assert 'id="quote-form"' in html
+          assert 'id="form-feedback"' in html
+          assert "/api/orcamento" in html
+          assert "localStorage" not in html, "commercial form must never save customer data locally"
+          assert "mold3dScript.src" not in html, "3D viewer must not depend on a separately loaded script"
+
           class Parser(HTMLParser):
               def __init__(self):
                   super().__init__()
                   self.scripts = []
                   self.current = None
               def handle_starttag(self, tag, attrs):
-                  if tag == "script": self.current = []
+                  if tag == "script":
+                      self.current = []
               def handle_data(self, data):
-                  if self.current is not None: self.current.append(data)
+                  if self.current is not None:
+                      self.current.append(data)
               def handle_endtag(self, tag):
                   if tag == "script" and self.current is not None:
                       self.scripts.append("".join(self.current))
                       self.current = None
-          p = Parser(); p.feed(html)
-          Path("/tmp/site-script.js").write_text("\n".join(p.scripts), encoding="utf-8")
+
+          parser = Parser()
+          parser.feed(html)
+          assert parser.scripts, "HTML must contain the embedded site script"
+          Path("/tmp/site-script.js").write_text("\\n".join(parser.scripts), encoding="utf-8")
+          print("HTML, viewer controls, form contract, and Wrangler configuration passed.")
           PY
+
+      - name: JavaScript syntax
+        run: |
           node --check /tmp/site-script.js
           node --check assets/mold-3d.js
+          node --check worker.js
+
+      - name: Production Worker route and form tests
+        run: node tests/worker-smoke.mjs
 
       - name: Start FastAPI legacy smoke server
         run: |
@@ -68,16 +91,20 @@ jobs:
           echo $! > /tmp/moldaco.pid
           for i in {1..20}; do curl -fsS http://127.0.0.1:8000/health && break || sleep 1; done
 
-      - name: Smoke test HTTP endpoints
+      - name: Smoke test legacy API and static files
         run: |
           curl -fsS http://127.0.0.1:8000/ | grep -q 'Moldaço'
-          curl -fsS http://127.0.0.1:8000/ | grep -q 'Modelo técnico 3D'
+          curl -fsS http://127.0.0.1:8000/ | grep -q 'mold3d-canvas'
+          curl -fsS http://127.0.0.1:8000/ | grep -q "getContext('webgl'"
           curl -fsS -o /tmp/mold-3d.js -w '%{http_code}' http://127.0.0.1:8000/assets/mold-3d.js | grep -q 200
+          curl -fsS -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Bot","email":"bot@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste do campo anti-spam","consentimento":true,"website":"bot"}' | grep -q '"ok":true'
+          status=$(curl -sS -o /tmp/moldaco-invalid.json -w '%{http_code}' -X POST http://127.0.0.1:8000/api/orcamento -H 'Content-Type: application/json' -d '{"nome":"Teste","email":"teste@example.com","telefone":"11999999999","servico":"Molde","descricao":"Teste sem consentimento","consentimento":false,"website":""}')
+          test "$status" = "400"
 
   deploy:
     name: Deploy Cloudflare Worker
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,24 +112,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check deployment credentials
-        id: credentials
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            echo "Cloudflare credentials are configured."
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Cloudflare deploy not run::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in Settings > Secrets and variables > Actions to enable automatic deployment. Tests passed."
-          fi
-
-      - name: Deploy Worker with Wrangler
-        if: steps.credentials.outputs.configured == 'true'
+      - name: Deploy configured Worker
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy worker.js --name moldaco-preview-2026 --compatibility-date 2026-10-21
+          command: deploy --config wrangler.jsonc
