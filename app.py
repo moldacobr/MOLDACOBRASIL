@@ -46,9 +46,9 @@ class Orcamento(BaseModel):
 async def pagina_inicial():
     html = INDEX_FILE.read_text(encoding="utf-8")
     marker = "</body>"
-    script = '<script src="/assets/mold-3d.js" defer></script>'
-    if script not in html:
-        html = html.replace(marker, f"{script}\n{marker}", 1)
+    scripts = '<script src="/assets/mold-3d-compat.js" defer></script>\n<script src="/assets/mold-3d.js" defer></script>'
+    if "/assets/mold-3d.js" not in html:
+        html = html.replace(marker, f"{scripts}\n{marker}", 1)
     return HTMLResponse(content=html)
 
 
