@@ -1,16 +1,18 @@
 /*
- * Formulário de orçamento — produção.
- * Não usar localStorage como fallback: pedidos comerciais devem ser enviados ao backend.
+ * Formulário de orçamento — WhatsApp.
+ * O pedido é montado no navegador e aberto diretamente no WhatsApp comercial.
+ * Não depende de e-mail, Worker ou armazenamento local.
  */
 (function () {
   'use strict';
 
-  const form = document.querySelector('#orcamento-form, form[data-orcamento]');
+  const form = document.querySelector('#orcamento-form, form[data-orcamento], #quote-form');
   if (!form || form.dataset.productionHandler === '1') return;
   form.dataset.productionHandler = '1';
 
   const button = form.querySelector('button[type="submit"]');
   const feedback = document.querySelector('#form-feedback, [data-form-feedback]');
+  const WHATSAPP_NUMBER = '55119930133018';
 
   function show(message, ok) {
     if (!feedback) return;
@@ -19,44 +21,67 @@
     feedback.dataset.state = ok ? 'success' : 'error';
   }
 
-  form.addEventListener('submit', async function (event) {
+  function value(name) {
+    const field = form.querySelector(`[name="${name}"]`);
+    return field ? String(field.value || '').trim() : '';
+  }
+
+  form.addEventListener('submit', function (event) {
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    const data = new FormData(form);
-    const payload = Object.fromEntries(data.entries());
-    payload.consentimento = Boolean(form.querySelector('[name="consentimento"]:checked'));
-
-    if (!payload.consentimento) {
+    const consent = form.querySelector('[name="consentimento"]');
+    if (!consent || !consent.checked) {
       show('É necessário autorizar o uso dos dados para contato comercial.', false);
       return;
     }
 
+    const nome = value('nome');
+    const email = value('email');
+    const telefone = value('telefone');
+    const servico = value('servico');
+    const descricao = value('descricao');
+
+    if (!nome || !email || !telefone || !servico || !descricao) {
+      show('Preencha todos os campos obrigatórios antes de continuar.', false);
+      return;
+    }
+
+    const message = [
+      '🔧 *NOVO PEDIDO DE ORÇAMENTO — MOLDAÇO*',
+      '',
+      `*Nome:* ${nome}`,
+      `*E-mail:* ${email}`,
+      `*Telefone:* ${telefone}`,
+      `*Serviço:* ${servico}`,
+      '',
+      '*Descrição do projeto:*',
+      descricao,
+      '',
+      'Enviado pelo formulário do site moldaco.com.br.'
+    ].join('\n');
+
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+
     if (button) {
       button.disabled = true;
-      button.textContent = 'Enviando...';
+      button.textContent = 'Abrindo WhatsApp...';
     }
-    show('Enviando sua solicitação...', true);
 
-    try {
-      const response = await fetch('/api/orcamento', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || result.ok !== true) {
-        throw new Error(result.detail || result.mensagem || 'Não foi possível enviar a solicitação.');
-      }
+    show('Abrindo o WhatsApp com seu pedido preenchido...', true);
+
+    const opened = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+    if (!opened) {
+      window.location.href = whatsappUrl;
+    }
+
+    setTimeout(function () {
       form.reset();
-      show('Pedido enviado com sucesso. Nossa equipe entrará em contato.', true);
-    } catch (error) {
-      show(error.message || 'Não foi possível enviar a solicitação agora. Tente novamente.', false);
-    } finally {
       if (button) {
         button.disabled = false;
         button.textContent = 'Enviar solicitação de orçamento';
       }
-    }
+    }, 800);
   }, true);
 })();
