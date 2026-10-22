@@ -8,7 +8,7 @@ if(url.pathname==="/api/orcamento"){
   if(request.method!=="POST")return new Response("Method not allowed",{status:405,headers:{Allow:"POST","Cache-Control":"no-store"}});
   let data;
   try{data=await request.json()}catch{return jsonResponse({ok:false,error:"JSON inválido."},400)}
-  if(data?.website)return jsonResponse({ok:true,whatsapp:true,spam:true,whatsappUrl:"https://wa.me/55119930133018"});
+  if(data?.website)return jsonResponse({ok:true,whatsapp:true,spam:true,whatsappUrl:"https://wa.me/5511993133018"});
   const nome=String(data?.nome||"").trim();
   const email=String(data?.email||"").trim();
   const telefone=String(data?.telefone||"").trim();
@@ -16,6 +16,6 @@ if(url.pathname==="/api/orcamento"){
   const descricao=String(data?.descricao||"").trim();
   if(!data?.consentimento)return jsonResponse({ok:false,error:"Consentimento obrigatório."},400);
   if(!nome||!telefone||!servico||!descricao||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return jsonResponse({ok:false,error:"Dados obrigatórios inválidos."},400);
-  return jsonResponse({ok:true,whatsapp:true,mensagem:"Seu pedido deve ser enviado pelo WhatsApp.",whatsappUrl:"https://wa.me/55119930133018"});
+  return jsonResponse({ok:true,whatsapp:true,mensagem:"Seu pedido deve ser enviado pelo WhatsApp.",whatsappUrl:"https://wa.me/5511993133018"});
 }
 if(request.method!=="GET"&&request.method!=="HEAD")return new Response("Method not allowed",{status:405,headers:{Allow:"GET, HEAD","Cache-Control":"no-store"}});let path;try{path=decodeURIComponent(url.pathname).replace(/^\/+/,"")}catch{return new Response("Not found",{status:404})}if(!path)path="index.html";if(path.includes("..")||path.split("/").some(segment=>segment.startsWith(".")))return new Response("Not found",{status:404});const allowedPath=path==="index.html"||path==="favicon.svg"||(path.startsWith("assets/")&&/^[A-Za-z0-9._\/-]+$/.test(path));if(!allowedPath)return new Response("Not found",{status:404});const extension=path.split(".").pop().toLowerCase();if(path.startsWith("assets/")&&!Object.prototype.hasOwnProperty.call(CONTENT_TYPES,extension))return new Response("Not found",{status:404});let upstream;try{upstream=await fetch(BASE+path+url.search,{method:request.method})}catch{return new Response("Site temporariamente indisponível.",{status:502,headers:withSecurityHeaders(new Headers({"Content-Type":"text/plain; charset=utf-8"}))})}const headers=withSecurityHeaders(new Headers(upstream.headers));if(CONTENT_TYPES[extension])headers.set("Content-Type",CONTENT_TYPES[extension]);if(!upstream.ok)return new Response(request.method==="HEAD"?null:upstream.body,{status:upstream.status,headers});if(path==="index.html"&&request.method!=="HEAD"){let html=await upstream.text();if(!html.includes("form-orcamento-production.js")){html=html.replace(/<\/body>/i,'<script src="/assets/form-orcamento-production.js" defer></script></body>')}return new Response(html,{status:upstream.status,headers})}return new Response(request.method==="HEAD"?null:upstream.body,{status:upstream.status,headers})}
