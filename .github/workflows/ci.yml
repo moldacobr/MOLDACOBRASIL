@@ -112,7 +112,7 @@ jobs:
           test "$page_status" = "200"
           grep -q 'id="mold3d-canvas"' /tmp/prod-index.html
           grep -q "getContext('webgl'" /tmp/prod-index.html
-          grep -q 'injeção de peças plásticas para terceiros' /tmp/prod-index.html
+          grep -q 'Ferramentaria para injeção termoplásticas zamak e aluminium' /tmp/prod-index.html
           blocked_status=$(curl --connect-timeout 10 --max-time 25 -sS -o /dev/null -w '%{http_code}' https://moldaco.com.br/worker.js)
           test "$blocked_status" = "404"
 
