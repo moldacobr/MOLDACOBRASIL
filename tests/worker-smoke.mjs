@@ -21,16 +21,10 @@ const context = {
   fetch: async (input) => {
     const url = String(input);
     if (url.endsWith("/index.html")) {
-      return new Response(htmlSource, {
-        status: 200,
-        headers: { "Content-Type": "text/html; charset=utf-8" }
-      });
+      return new Response(htmlSource, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
     }
     if (url.endsWith("/assets/mold-3d.js")) {
-      return new Response(assetSource, {
-        status: 200,
-        headers: { "Content-Type": "application/javascript; charset=utf-8" }
-      });
+      return new Response(assetSource, { status: 200, headers: { "Content-Type": "application/javascript; charset=utf-8" } });
     }
     return new Response("mock asset", { status: 200 });
   },
@@ -45,10 +39,7 @@ assert.equal(typeof registeredFetchHandler, "function", "Worker registers fetch 
 async function dispatch(path, init = {}) {
   const request = new Request("https://moldaco.test" + path, init);
   let responsePromise;
-  registeredFetchHandler({
-    request,
-    respondWith(promise) { responsePromise = promise; }
-  });
+  registeredFetchHandler({ request, respondWith(promise) { responsePromise = promise; } });
   assert.ok(responsePromise, "fetch handler calls respondWith");
   return await responsePromise;
 }
@@ -65,6 +56,8 @@ assert.match(homeHtml, /id="mold3d-canvas"/, "home page contains the 3D canvas")
 assert.match(homeHtml, /getContext\('webgl'/, "3D renderer is embedded in the page");
 assert.match(homeHtml, /\/api\/orcamento/, "home page uses the production API endpoint");
 assert.match(homeHtml, /atua na <strong>injeção de peças plásticas para terceiros<\/strong>/, "canonical service description is present");
+assert.match(homeHtml, /5511993133018/, "home page exposes the correct WhatsApp number");
+assert.doesNotMatch(homeHtml, /55119930133018/, "home page does not expose the old WhatsApp number");
 assert.match(home.headers.get("content-security-policy"), /frame-ancestors/, "security policy is present");
 assert.doesNotMatch(homeHtml, /liveCheckout/, "worker does not inject a duplicate form handler");
 assert.doesNotMatch(homeHtml, /guardado localmente|O envio automático não está disponível/i, "production page does not advertise local-only submission");
@@ -74,43 +67,28 @@ assert.equal(asset.status, 200, "asset route returns 200");
 assert.match(asset.headers.get("content-type"), /javascript/i);
 
 const invalid = await dispatch("/api/orcamento", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    nome: "Teste", email: "teste@example.com", telefone: "11999999999",
-    servico: "Molde", descricao: "Solicitação de teste de validação",
-    consentimento: false, website: ""
-  })
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ nome: "Teste", email: "teste@example.com", telefone: "11999999999", servico: "Molde", descricao: "Solicitação de teste de validação", consentimento: false, website: "" })
 });
 assert.equal(invalid.status, 400, "missing consent is rejected");
 assert.equal(sentEmails.length, 0, "invalid form never sends email");
 
 const honeypot = await dispatch("/api/orcamento", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    nome: "Bot", email: "bot@example.com", telefone: "11999999999",
-    servico: "Molde", descricao: "Solicitação automatizada de teste",
-    consentimento: true, website: "bot-filled-field"
-  })
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ nome: "Bot", email: "bot@example.com", telefone: "11999999999", servico: "Molde", descricao: "Solicitação automatizada de teste", consentimento: true, website: "bot-filled-field" })
 });
 assert.equal(honeypot.status, 200, "honeypot receives a generic success");
 assert.equal(sentEmails.length, 0, "honeypot never sends email");
 
 const valid = await dispatch("/api/orcamento", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    nome: "Teste válido", email: "cliente@example.com", telefone: "11999999999",
-    servico: "Molde", descricao: "Solicitação válida\ncom duas linhas para testar o envio",
-    consentimento: true, website: ""
-  })
+  method: "POST", headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ nome: "Teste válido", email: "cliente@example.com", telefone: "11999999999", servico: "Molde", descricao: "Solicitação válida\ncom duas linhas para testar o envio", consentimento: true, website: "" })
 });
 assert.equal(valid.status, 200, "valid quote request returns 200");
 const validBody = await valid.json();
 assert.equal(validBody.ok, true, "valid request returns ok");
 assert.equal(validBody.whatsapp, true, "valid request uses WhatsApp flow");
-assert.match(validBody.whatsappUrl, /^https:\/\/wa\.me\/55119930133018/);
+assert.match(validBody.whatsappUrl, /^https:\/\/wa\.me\/5511993133018/);
 assert.equal(sentEmails.length, 0, "valid request never sends email");
 
 const hidden = await dispatch("/.env");
