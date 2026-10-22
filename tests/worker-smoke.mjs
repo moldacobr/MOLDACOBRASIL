@@ -107,10 +107,11 @@ const valid = await dispatch("/api/orcamento", {
   })
 });
 assert.equal(valid.status, 200, "valid quote request returns 200");
-assert.equal(sentEmails.length, 1, "valid request sends exactly one email");
-assert.equal(sentEmails[0].to, "admin@moldaco.com");
-assert.equal(sentEmails[0].replyTo, "cliente@example.com");
-assert.match(sentEmails[0].text, /com duas linhas/, "multiline descriptions are preserved");
+const validBody = await valid.json();
+assert.equal(validBody.ok, true, "valid request returns ok");
+assert.equal(validBody.whatsapp, true, "valid request uses WhatsApp flow");
+assert.match(validBody.whatsappUrl, /^https:\/\/wa\.me\/55119930133018/);
+assert.equal(sentEmails.length, 0, "valid request never sends email");
 
 const hidden = await dispatch("/.env");
 assert.equal(hidden.status, 404, "hidden files are not served");
@@ -127,4 +128,4 @@ const invalidJson = await dispatch("/api/orcamento", {
 });
 assert.equal(invalidJson.status, 400, "malformed JSON is rejected");
 
-console.log("Worker smoke tests passed: health, home, 3D markup, assets, form validation, honeypot, email, hidden files.");
+console.log("Worker smoke tests passed: health, home, 3D markup, assets, form validation, honeypot, WhatsApp, hidden files.");
