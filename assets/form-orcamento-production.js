@@ -12,7 +12,7 @@
 
     const button = form.querySelector('button[type="submit"]');
     const feedback = document.querySelector('#form-feedback, [data-form-feedback]');
-    const WHATSAPP_NUMBER = '55119930133018';
+    const WHATSAPP_NUMBER = '5511993133018';
 
     function show(message, ok) {
       if (!feedback) return;
@@ -30,7 +30,6 @@
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      // O HTML atual usa id="consentimento"; aceitamos também name para compatibilidade.
       const consent = form.querySelector('[name="consentimento"], #consentimento');
       if (!consent || !consent.checked) {
         show('É necessário autorizar o uso dos dados para contato comercial.', false);
@@ -70,8 +69,6 @@
       }
 
       show('Abrindo o WhatsApp com seu pedido preenchido...', true);
-
-      // Navegação direta: funciona mesmo quando o navegador bloqueia pop-ups.
       window.location.assign(whatsappUrl);
     }, true);
 
