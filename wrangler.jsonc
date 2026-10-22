@@ -4,12 +4,13 @@
   "main": "worker.js",
   "compatibility_date": "2026-10-21",
   "vars": {
-    "MAIL_FROM": "admin@moldaco.com",
-    "MAIL_TO": "admin@moldaco.com"
+    "MAIL_FROM": "contato@moldaco.com.br",
+    "MAIL_TO": "contato@moldaco.com.br"
   },
   "send_email": [
     {
-      "name": "EMAIL"
+      "name": "EMAIL",
+      "destination_address": "contato@moldaco.com.br"
     }
   ]
 }
